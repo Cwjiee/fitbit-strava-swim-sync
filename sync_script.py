@@ -5,6 +5,7 @@ from supabase import create_client
 # Load credentials from GitHub Secrets
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_KEY")
+FITBIT_CLIENT_ID = os.environ.get("FITBIT_CLIENT_ID")
 FITBIT_CLIENT_SECRET = os.environ.get("FITBIT_CLIENT_SECRET")
 STRAVA_CLIENT_ID = os.environ.get("STRAVA_CLIENT_ID")
 STRAVA_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET")
