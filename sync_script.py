@@ -22,6 +22,10 @@ def refresh_fitbit(old_token):
     # Fitbit requires Basic Auth header (Client_ID:Client_Secret in Base64) 
     # or sending them in the body depending on your app type.
     response = requests.post(url, data=data, auth=(FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET))
+    
+    if not response.ok:
+        raise Exception(f"Fitbit API Error ({response.status_code}): {response.text}")
+        
     return response.json()
 
 def refresh_strava(old_token):
@@ -33,6 +37,10 @@ def refresh_strava(old_token):
         "refresh_token": old_token
     }
     response = requests.post(url, data=data)
+    
+    if not response.ok:
+        raise Exception(f"Strava API Error ({response.status_code}): {response.text}")
+        
     return response.json()
 
 def main():
@@ -42,7 +50,9 @@ def main():
 
     # 2. Get new tokens from Fitbit & Strava
     new_fb = refresh_fitbit(tokens['fitbit_refresh_token'])
+    print(new_fb)
     new_st = refresh_strava(tokens['strava_refresh_token'])
+    print(new_st)
 
     # 3. Update Supabase with the brand new Refresh Tokens
     supabase.table("auth_tokens").update({
