@@ -130,7 +130,7 @@ def post_strava_activity(access_token, swim_data):
         time_of_day = "evening"
 
     payload = {
-        "name": f"{time_of_day.capitalize()} Pool Swim",
+        "name": f"{time_of_day.capitalize()} Swim",
         "type": "Swim",
         "start_date_local": swim_data.get("startTime"),
         "elapsed_time": elapsed_time,
