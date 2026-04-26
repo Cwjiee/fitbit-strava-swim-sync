@@ -115,12 +115,30 @@ def post_strava_activity(access_token, swim_data):
     else:
         distance_meters = distance * 1000
 
+    # midnight-6 am: night 6am - 12pm: morning 12pm-2pm: lunch 2pm - 6pm : afternoon 6pm-midnight: evening 
+    # https://www.reddit.com/r/Strava/comments/1dmju1z/what_is_stravas_definition_of_time/
+
+    date_str = swim_data.get("startTime")
+    dt = datetime.fromisoformat(date_str)
+    hour = dt.hour
+
+    if 0 <= hour < 6:
+        time_of_day = "night"
+    elif 6 <= hour < 12:
+        time_of_day = "morning"
+    elif 12 <= hour < 14:
+        time_of_day = "lunch"
+    elif 14 <= hour < 18:
+        time_of_day = "afternoon"
+    else:
+        time_of_day = "evening"
+
     payload = {
-        "name": "Pool Swim",
+        "name": f"{time_of_day.capitalize()} Pool Swim",
         "type": "Swim",
         "start_date_local": swim_data.get("startTime"),
         "elapsed_time": elapsed_time,
-        "description": "Automatically synced from Fitbit 🏊‍♂️ (automation script testing)",
+        "description": "Google Pixel Watch 2",
         "distance": distance_meters
     }
     
