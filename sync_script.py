@@ -69,10 +69,12 @@ def get_fitbit_swims(access_token, last_sync_date_str):
         
     data = response.json()
     activities = data.get("activities", [])
+    print(activities)
     
     swims_to_sync = []
     for activity in activities:
-        is_swim = activity.get("activityName", "").lower() == "swim" or activity.get("activityTypeId") == 90024
+        # is_swim = activity.get("activityName", "").lower() == "swim" or activity.get("activityTypeId") == 90024
+        is_swim = "swim" in activity.get("activityName", "").lower() or activity.get("activityTypeId") == 90024
         if not is_swim:
             continue
             
