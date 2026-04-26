@@ -3,6 +3,10 @@ import requests
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Load credentials from GitHub Secrets
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_KEY")
@@ -20,8 +24,6 @@ def refresh_fitbit(old_token):
         "refresh_token": old_token,
         "client_id": FITBIT_CLIENT_ID
     }
-    # Fitbit requires Basic Auth header (Client_ID:Client_Secret in Base64) 
-    # or sending them in the body depending on your app type.
     response = requests.post(url, data=data, auth=(FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET))
     
     if not response.ok:
@@ -101,11 +103,9 @@ def post_strava_activity(access_token, swim_data):
     url = "https://www.strava.com/api/v3/activities"
     headers = {"Authorization": f"Bearer {access_token}"}
     
-    # Fitbit duration is in milliseconds, Strava wants seconds
     duration_ms = swim_data.get("duration", 0)
     elapsed_time = duration_ms // 1000
     
-    # Fitbit distance could be in km or miles. Strava wants meters.
     distance = swim_data.get("distance", 0)
     distance_unit = swim_data.get("distanceUnit", "Kilometer")
     if distance_unit.lower() in ["kilometer", "kilometers", "km"]:
@@ -116,11 +116,11 @@ def post_strava_activity(access_token, swim_data):
         distance_meters = distance * 1000
 
     payload = {
-        "name": "Fitbit Swim",
+        "name": "Pool Swim",
         "type": "Swim",
         "start_date_local": swim_data.get("startTime"),
         "elapsed_time": elapsed_time,
-        "description": "Automatically synced from Fitbit 🏊‍♂️",
+        "description": "Automatically synced from Fitbit 🏊‍♂️ (automation script testing)",
         "distance": distance_meters
     }
     
@@ -131,17 +131,14 @@ def post_strava_activity(access_token, swim_data):
     return True
 
 def main():
-    # Fetch current refresh tokens from Supabase
     res = supabase.table("auth_tokens").select("*").eq("id", 1).single().execute()
     tokens = res.data
 
-    # Get new tokens from Fitbit & Strava
     new_fb = refresh_fitbit(tokens['fitbit_refresh_token'])
     print(new_fb)
     new_st = refresh_strava(tokens['strava_refresh_token'])
     print(new_st)
 
-    # Fetch and Sync Swims
     last_sync_date = tokens.get('last_sync_date')
     swims = get_fitbit_swims(new_fb['access_token'], last_sync_date)
     
@@ -159,7 +156,6 @@ def main():
         else:
             print("Failed to post to Strava.")
 
-    # Update Supabase with the brand new Refresh Tokens and latest sync date
     update_data = {
         "fitbit_refresh_token": new_fb['refresh_token'],
         "strava_refresh_token": new_st['refresh_token'],
