@@ -3,10 +3,6 @@ import requests
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 # Load credentials from GitHub Secrets
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_KEY")
