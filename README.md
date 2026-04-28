@@ -13,6 +13,7 @@ While runs and bike rides sync over to Strava seamlessly, swims tracked on your 
 - **Proper Formatting:** Converts Fitbit's duration and distance formats into Strava's expected metrics.
 - **Device Attribution:** Tags the activities as originating from the "Google Pixel Watch 2" in the Strava description.
 - **State Management:** Uses Supabase as a lightweight database to securely store OAuth refresh tokens and keep track of the `last_sync_date`, ensuring no duplicate swims are uploaded.
+- **Sync Audit Log:** Every successful sync is recorded in a `sync_log` table (Fitbit log ID → Strava activity ID), providing a full history and preventing duplicate uploads even if the script runs multiple times.
 
 ## How it works
 

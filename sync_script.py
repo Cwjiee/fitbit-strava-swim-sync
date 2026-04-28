@@ -95,6 +95,20 @@ def get_fitbit_swims(access_token, last_sync_date_str):
 
     return swims_to_sync
 
+def is_already_synced(fitbit_log_id):
+    res = supabase.table("sync_log").select("id").eq("fitbit_log_id", fitbit_log_id).execute()
+    return len(res.data) > 0
+
+def log_sync(fitbit_log_id, strava_activity_id, activity_name, start_time, distance_meters, elapsed_time):
+    supabase.table("sync_log").insert({
+        "fitbit_log_id": fitbit_log_id,
+        "strava_activity_id": strava_activity_id,
+        "activity_name": activity_name,
+        "start_time": start_time,
+        "distance_meters": round(distance_meters, 2),
+        "elapsed_seconds": elapsed_time,
+    }).execute()
+
 def post_strava_activity(access_token, swim_data):
     url = "https://www.strava.com/api/v3/activities"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -129,8 +143,10 @@ def post_strava_activity(access_token, swim_data):
     else:
         time_of_day = "evening"
 
+    activity_name = f"{time_of_day.capitalize()} Swim"
+
     payload = {
-        "name": f"{time_of_day.capitalize()} Swim",
+        "name": activity_name,
         "type": "Swim",
         "start_date_local": swim_data.get("startTime"),
         "elapsed_time": elapsed_time,
@@ -141,8 +157,15 @@ def post_strava_activity(access_token, swim_data):
     response = requests.post(url, headers=headers, data=payload)
     if not response.ok:
         print(f"Strava Post Error: {response.text}")
-        return False
-    return True
+        return None
+    
+    strava_data = response.json()
+    return {
+        "strava_id": strava_data.get("id"),
+        "activity_name": activity_name,
+        "distance_meters": distance_meters,
+        "elapsed_time": elapsed_time
+    }
 
 def main():
     res = supabase.table("auth_tokens").select("*").eq("id", 1).single().execute()
@@ -160,10 +183,26 @@ def main():
     
     latest_sync_date_str = last_sync_date
     for swim in swims:
+        fitbit_log_id = str(swim.get('logId'))
+        
+        if is_already_synced(fitbit_log_id):
+            print(f"Skipping swim {fitbit_log_id} from {swim.get('startTime')} — already synced.")
+            continue
+        
         print(f"Syncing swim from {swim.get('startTime')}...")
-        success = post_strava_activity(new_st['access_token'], swim)
-        if success:
-            print("Successfully posted to Strava!")
+        result = post_strava_activity(new_st['access_token'], swim)
+        if result:
+            print(f"Successfully posted to Strava! (ID: {result['strava_id']})")
+            
+            log_sync(
+                fitbit_log_id=fitbit_log_id,
+                strava_activity_id=str(result['strava_id']),
+                activity_name=result['activity_name'],
+                start_time=swim.get('startTime'),
+                distance_meters=result['distance_meters'],
+                elapsed_time=result['elapsed_time']
+            )
+            
             swim_start_str = swim.get('startTime')
             if latest_sync_date_str is None or swim_start_str > latest_sync_date_str:
                 latest_sync_date_str = swim_start_str
